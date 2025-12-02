@@ -1,2 +1,17 @@
-# my-ai-agents
-All the AI Agents I make is here.
+# AI Automation Agents
+
+This repository contains my production-ready AI agents built with n8n, Llama 3, and Python.
+
+## 🤖 1. Commerce Price Bot (Price Bot.json)
+**Stack:** Telegram API + Tavily Search + Stripe + Llama 3
+**Function:**
+- Autonomously searches for product prices.
+- Generates Stripe checkout links on demand.
+- Handles user queries via Telegram interface.
+
+## 📺 2. YouTube Curator Agent (Curator Agent.json)
+**Stack:** YouTube Data API + Groq (Llama 3) + n8n Schedule
+**Function:**
+- Runs daily at 8:00 AM.
+- Filters out "Shorts" and clickbait using Regex logic.
+- Adds high-quality educational videos to a private playlist automatically.
