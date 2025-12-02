@@ -1,0 +1,231 @@
+{
+  "name": "Price Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "You are 'Sniper', an expert procurement and commerce agent.\n\nYOUR TOOLS:\n1. You have a 'Tavily Search' tool.\n2. You MUST use this tool whenever the user asks for prices, stock availability, or product comparisons.\n\nYOUR RULES:\n1. precise: Do not say \"approximately\". Find the real price.\n2. direct: If the user asks for a price, just give the price and the link. No small talk.\n3. honest: If you cannot find a price via search, say \"I cannot find a reliable price right now.\"\n\nGOAL:\nFind the best deal for the user."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        48,
+        -160
+      ],
+      "id": "44d81409-463b-4381-89ec-6f97ffc3b262",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        112
+      ],
+      "id": "b8c45554-ae64-4f22-9f28-ad594fde17f4",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "nQwTQ3NVi0eRK0ts",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "query": "={{ $fromAI(\"query\", \"The search query to find the product price\") }}",
+        "options": {
+          "search_depth": "basic",
+          "max_results": 3,
+          "include_answer": "basic"
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        320,
+        112
+      ],
+      "id": "a7abf817-5243-44a9-993e-dbc6ef4f1104",
+      "name": "Search in Tavily",
+      "credentials": {
+        "tavilyApi": {
+          "id": "d0LZVUHL31cPlISs",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        144
+      ],
+      "id": "88206ed7-3a91-43cd-ad2c-1b31eb0de406",
+      "name": "Simple Memory",
+      "notes": "test"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -480,
+        -128
+      ],
+      "id": "ffa40765-1c32-49a5-917b-91b800c97f96",
+      "name": "When chat message received",
+      "webhookId": "3f5fcbf7-6e26-4e98-b557-3a48fd4a8e49"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -224,
+        -96
+      ],
+      "id": "8343653e-67c1-4db7-9cdd-c9e00d8cc1f2",
+      "name": "Telegram Trigger",
+      "webhookId": "2fe3c140-5656-4931-a808-fc516808008a",
+      "credentials": {
+        "telegramApi": {
+          "id": "eVEPf4bTr5hAUTj8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        -96
+      ],
+      "id": "866ac2f5-5218-4d63-b664-96863a923d5c",
+      "name": "Send a text message1",
+      "webhookId": "b425715d-7cb3-489a-be27-2801ef6e823a",
+      "credentials": {
+        "telegramApi": {
+          "id": "eVEPf4bTr5hAUTj8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Telegram Alternative\nIn need of a urgent checkup\n",
+        "height": 272,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        -256
+      ],
+      "id": "04ea4bc0-7cc6-4a03-81c3-aeb930da4ea6",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search in Tavily": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        []
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ff872a05-edfa-4eb7-869e-3c7351c25e07",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5c0fefed8dc0f2e7e9733a90f0545620d3f7c9e01b48a661af3d168e15db7eb4"
+  },
+  "id": "SZZJY1QQRElofEms",
+  "tags": []
+}
