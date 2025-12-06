@@ -1,0 +1,302 @@
+{
+  "name": "Curator Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -48,
+        0
+      ],
+      "id": "8a3d257d-a7d9-4b28-aea6-a28a56be3adc",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.items }}",
+        "options": {
+          "systemMessage": "You are a Content Curator.\nI will provide you a list of recent YouTube videos in JSON format.\n\nYOUR TASK:\n1. Analyze the 'title' and 'description' of each video.\n2. Filter OUT any video that looks like clickbait (all caps, \"SHOCKING\", \"GONE WRONG\"), is unrelated to the topic, or is a \"Short\".\n3. Select the SINGLE best educational/technical video from the list.\n\nOUTPUT FORMAT:\nReturn ONLY the Video ID of the best video. Do not write any other text.\nExample Output: dQw4w9WgXcQ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        352,
+        -48
+      ],
+      "id": "2e49d29c-4743-4f8f-862d-4131cd6da8da",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        352,
+        192
+      ],
+      "id": "89f84260-a979-40fb-b319-986fa9713196",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "nQwTQ3NVi0eRK0ts",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "youTubeOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet"
+            },
+            {
+              "name": "maxResults",
+              "value": "10"
+            },
+            {
+              "name": "type",
+              "value": "video"
+            },
+            {
+              "name": "q",
+              "value": "AI Agents"
+            },
+            {
+              "name": "order",
+              "value": "date"
+            },
+            {
+              "name": "publishedAfter",
+              "value": "={{ $now.minus({days: 90}).toISO() }}"
+            },
+            {
+              "name": "videoDuration",
+              "value": "medium"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        160,
+        64
+      ],
+      "id": "ddff8dec-a88d-449b-8b3c-34b5579d9c5a",
+      "name": "HTTP Request",
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "xpJR0fBpHYyAgyBq",
+          "name": "Google account"
+        },
+        "youTubeOAuth2Api": {
+          "id": "UkLJ0PbvKxGhbCm4",
+          "name": "YouTube account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6093344125",
+        "text": "=Daily video added: https://youtu.be/{{ $('AI Agent').item.json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1056,
+        -16
+      ],
+      "id": "0c7c6769-ef82-4e2d-bfa3-fd58f9e73dcf",
+      "name": "Send a text message",
+      "webhookId": "06719b83-50cc-44e1-a709-9defc93b8efb",
+      "credentials": {
+        "telegramApi": {
+          "id": "eVEPf4bTr5hAUTj8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "playlistItem",
+        "playlistId": "PL7XeulXiO3GGwyL1-WtZCD8vYCCq1ZKzi",
+        "videoId": "={{ $json.videoId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -64
+      ],
+      "id": "4d39c949-f629-4187-b0ae-3167a5fc5115",
+      "name": "Add a playlist item",
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "UkLJ0PbvKxGhbCm4",
+          "name": "YouTube account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## NOT USED THESE NODES\nAll the stuff is done by http node that is search and storing the chat, so we don't need these nodes.\n",
+        "height": 272,
+        "width": 496
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        784,
+        176
+      ],
+      "id": "556c7fa8-2332-4e65-879c-c42117dfbee1",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavily",
+      "typeVersion": 1,
+      "position": [
+        848,
+        304
+      ],
+      "id": "79d76451-9a07-4b7c-8294-adee18e6da62",
+      "name": "Search",
+      "credentials": {
+        "tavilyApi": {
+          "id": "d0LZVUHL31cPlISs",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1104,
+        320
+      ],
+      "id": "c3386187-0a97-4d83-863f-987743cabb9b",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiOutput = $input.first().json.output;\n\n// 1. Try to find a list like [\"id1\", \"id2\"]\nconst listMatch = aiOutput.match(/\\[.*\\]/s);\n\nif (listMatch) {\n  // If we found a list, parse it\n  const ids = JSON.parse(listMatch[0]);\n  return ids.map(id => ({ json: { videoId: id } }));\n\n} else {\n  // 2. If NO list, assume the AI just gave us a single ID string\n  // Clean up quotes or whitespace\n  const rawID = aiOutput.replace(/[\"'\\[\\]\\n]/g, '').trim();\n  \n  if (rawID.length > 0) {\n    // Return it as a single item\n    return [ { json: { videoId: rawID } } ];\n  } else {\n    return [];\n  }\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        16
+      ],
+      "id": "e965ee33-f8ae-4c66-975b-3588b98a22d5",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add a playlist item": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Add a playlist item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e8a306c8-94b3-41d3-94d0-1024415a56dc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5c0fefed8dc0f2e7e9733a90f0545620d3f7c9e01b48a661af3d168e15db7eb4"
+  },
+  "id": "XMfnpNd0tknmLD0b",
+  "tags": []
+}
