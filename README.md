@@ -15,7 +15,7 @@ This repository contains my production-ready AI agents built with n8n, Llama 3, 
 - Filters out "Shorts" and clickbait using Regex logic.
 - Adds high-quality educational videos to a private playlist automatically.
 
-### 🎯 3. Autonomous SDR Agent (SDR Agent.json)
+### 🎯 3. Autonomous SDR Agent (SDR Agent.json)(Web_Scraper.json, AI_Lead_Processor.json, Cold_Emailer.json)
 
 **Stack:** n8n + Custom Web Scraping + OpenAI API **Function:**
 
