@@ -1,0 +1,533 @@
+{
+  "name": "Web Scraper",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "en-US,en;q=0.5"
+            },
+            {
+              "name": "Referer",
+              "value": "https://www.google.com/"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -176,
+        80
+      ],
+      "id": "5494ac15-d4e7-47b2-94e9-4f536ff3c3b6",
+      "name": "HTTP Request",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"api_key\": \"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\",\n  \"query\": \"{{ $json.message.text }} official site contact\",\n  \"search_depth\": \"advanced\",\n  \"include_answer\": false,\n  \"max_results\": 10\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1248,
+        -128
+      ],
+      "id": "3520cf70-a1d3-4e76-8db9-afd45015931d",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "options": {
+          "includeBinary": true
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1056,
+        -128
+      ],
+      "id": "edf77b94-571d-45e8-bee8-a8a662a42d77",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -672,
+        64
+      ],
+      "id": "3bc6ad9e-4c72-4eee-86ab-04756e5ef1dd",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "html": "={{ $json.data }}",
+        "destinationKey": "content",
+        "options": {
+          "maxConsecutiveNewlines": 2
+        }
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        16,
+        80
+      ],
+      "id": "c05541cf-0493-43b8-985b-7f62ca411656",
+      "name": "Markdown",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the clean text from the Markdown node\nconst rawText = $input.first().json.content || \"\";\n\n// 2. FIX: Get the URL directly from the Loop node\n// (The HTTP node forgot it, so we ask the Loop node instead)\nconst url = $(\"Loop Over Items\").item.json.url;\n\n// 3. Smart Truncate (Top 7.5k + Bottom 7.5k)\nlet finalContent = rawText;\nif (rawText.length > 15000) {\n  const head = rawText.substring(0, 7500);\n  const tail = rawText.substring(rawText.length - 7500);\n  finalContent = head + \"\\n\\n ... [CONTENT REMOVED] ... \\n\\n\" + tail;\n}\n\nreturn {\n  url: url,\n  cleaned_text: finalContent\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        80
+      ],
+      "id": "b7355186-06e7-4267-9bf8-5dc4df5a0ba4",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "17Pj-l6WKdoZ5sxVXaPDpWhPDqpdqPcs01q2gEIlZ1YY",
+          "mode": "list",
+          "cachedResultName": "Web SCrap",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17Pj-l6WKdoZ5sxVXaPDpWhPDqpdqPcs01q2gEIlZ1YY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17Pj-l6WKdoZ5sxVXaPDpWhPDqpdqPcs01q2gEIlZ1YY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "URL": "={{ $json.url }}",
+            "Raw Content": "={{ $json.cleaned_text }}"
+          },
+          "matchingColumns": [
+            "URL"
+          ],
+          "schema": [
+            {
+              "id": "URL",
+              "displayName": "URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Raw Content",
+              "displayName": "Raw Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Status",
+              "displayName": "Email Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        80
+      ],
+      "id": "23b90a7b-9843-4110-9b1f-f095aa16dc3a",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "65WzZkEMUnBLXPKl",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6037b09a-7ecc-4ce9-affe-47c299820188",
+              "leftValue": "={{ $json.url }}",
+              "rightValue": "instagram",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "980044a6-5f9a-49c0-b90f-33904f8dabc6",
+              "leftValue": "={{ $json.url }}",
+              "rightValue": "facebook",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "8830bfde-935c-411b-b39f-39d178ebbe14",
+              "leftValue": "={{ $json.url }}",
+              "rightValue": "yelp",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "369bc1f7-2b09-4814-affd-0065f4f2a7a6",
+              "leftValue": "={{ $json.url }}",
+              "rightValue": "tripadvisor",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "1944b148-aaaa-4c52-b249-d1cb207e40e7",
+              "leftValue": "={{ $json.url }}",
+              "rightValue": "linkedin",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -416,
+        80
+      ],
+      "id": "5e21c42e-c946-4920-8577-2ca9849d519e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        80
+      ],
+      "id": "2cd9f189-6f01-47fa-b1df-cd887b1d5bcc",
+      "name": "Wait",
+      "webhookId": "9c4f8fda-af06-4378-8be4-99ecbf8256a5"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1456,
+        48
+      ],
+      "id": "734a0110-0909-44e3-91ce-dc5578ba9622",
+      "name": "Telegram Trigger",
+      "webhookId": "13bb284d-c2c6-4fff-8418-56d6f017e9e7",
+      "credentials": {
+        "telegramApi": {
+          "id": "a2IgDjd076LMjDrC",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "17Pj-l6WKdoZ5sxVXaPDpWhPDqpdqPcs01q2gEIlZ1YY",
+          "mode": "list",
+          "cachedResultName": "Web SCrap",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17Pj-l6WKdoZ5sxVXaPDpWhPDqpdqPcs01q2gEIlZ1YY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17Pj-l6WKdoZ5sxVXaPDpWhPDqpdqPcs01q2gEIlZ1YY/edit#gid=0"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "detectAutomatically"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1152,
+        240
+      ],
+      "id": "3192cc19-827c-425f-ae67-2ae0cbba7913",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "65WzZkEMUnBLXPKl",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "url",
+              "field2": "URL"
+            }
+          ]
+        },
+        "joinMode": "keepNonMatches",
+        "outputDataFrom": "input1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -896,
+        64
+      ],
+      "id": "50856228-3d2d-45fa-82ec-250b7b65a4d6",
+      "name": "Merge"
+    }
+  ],
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

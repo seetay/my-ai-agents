@@ -1,0 +1,427 @@
+{
+  "name": "AI Lead Processor",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "17Pj-l6WKdoZ5sxVXaPDpWhPDqpdqPcs01q2gEIlZ1YY",
+          "mode": "list",
+          "cachedResultName": "Web SCrap",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17Pj-l6WKdoZ5sxVXaPDpWhPDqpdqPcs01q2gEIlZ1YY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17Pj-l6WKdoZ5sxVXaPDpWhPDqpdqPcs01q2gEIlZ1YY/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        208
+      ],
+      "id": "4efbd4f2-1919-4ecb-8a0d-4a53685b635e",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "O7W13vGJT29liP4o",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert Copywriter and Researcher. I will provide raw text from a business website.\nYour goal is to extract key details to help me write a hyper-personalized cold email to them.\n\nExtract these 5 fields:\n\n1. **business_name**: The official brand name.\n2. **email**: The best contact email (Prioritize Decision Makers > General).\n3. **phone**: The main business phone number.\n4. **city**: The primary city they serve.\n5. **personalization_hook**: Find the most impressive thing on their page to compliment them on.\n   - Look for: A specific Case Study (e.g., \"how they helped Client X\"), a recent Award, a unique methodology, or a specific impressive number (e.g., \"Managed $50M in assets\").\n   - **Constraint:** Summarize this in 2-3 sentences. Include specific names, numbers, or results if found.\n   - **Goal:** This text will be pasted directly into an email to say \"I was impressed by...\"\n\n**Output Format:**\nReturn ONLY valid JSON. No markdown.\n\nExample JSON:\n{\n  \"business_name\": \"Apex Solar\",\n  \"email\": \"owner@apexsolar.com\",\n  \"phone\": \"+1 555-0199\",\n  \"city\": \"Austin\",\n  \"personalization_hook\": \"I noticed you recently completed the massive solar installation for the Austin City Library. It is impressive that you managed to offset their energy usage by 40% in just three months.\"\n}\n\nHere is the website text from the gym:\n{{ $json['Raw Content'] }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        0,
+        208
+      ],
+      "id": "bc0114f5-35f0-4a04-9c14-d4b2db2915ad",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        0,
+        496
+      ],
+      "id": "a880082c-2720-4dfc-93b4-62997ade5300",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "GD4QgShZfPghZSZD",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Get the text from the AI Agent (for the current item in the loop)\n// Note: Ensure the output of your AI node is mapped correctly. \n// Usually it is $json.output or $json.text\nconst aiText = $json.output || \"\"; \n\n// Clean up markdown formatting\nconst cleanJson = aiText.replace(/```json/g, \"\").replace(/```/g, \"\").trim();\n\ntry {\n  // Turn it into real data\n  return JSON.parse(cleanJson);\n} catch (error) {\n  // If AI failed, return nulls so the workflow doesn't stop\n  return {\n    business_name: \"Error parsing JSON\",\n    email: null,\n    personalization_hook: null\n  };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        192
+      ],
+      "id": "baa0f6d8-5c19-47cf-9e80-a0e7ce800e29",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -240,
+        208
+      ],
+      "id": "0f654a5b-3a19-4178-886e-f21fc21cae8d",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "chatId": "6093344125",
+        "text": "The Extraction is done!!🥳",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c26d962b-2610-4849-b7fb-1dc63beff376",
+      "name": "Send a text message",
+      "webhookId": "b00783bc-c734-4d75-b56b-eecdeecff4d1",
+      "credentials": {
+        "telegramApi": {
+          "id": "a2IgDjd076LMjDrC",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1NuCYd6G_AoD93ltclVK-OWc_WxUgp9jl7nOPn1yNDtI",
+          "mode": "list",
+          "cachedResultName": "Leads Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NuCYd6G_AoD93ltclVK-OWc_WxUgp9jl7nOPn1yNDtI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NuCYd6G_AoD93ltclVK-OWc_WxUgp9jl7nOPn1yNDtI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Business Name": "={{ $json.business_name }}",
+            "Email": "={{ $json.email }}",
+            "Phone": "={{ $json.phone }}",
+            "City": "={{ $json.city }}",
+            "Source URL": "={{ $('Loop Over Items').item.json.URL }}",
+            "Hook": "={{ $json.personalization_hook }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Business Name",
+              "displayName": "Business Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "City",
+              "displayName": "City",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hook",
+              "displayName": "Hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source URL",
+              "displayName": "Source URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        544,
+        192
+      ],
+      "id": "d46c2985-79ab-43e4-9ca3-128a3a6e38aa",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "65WzZkEMUnBLXPKl",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "17Pj-l6WKdoZ5sxVXaPDpWhPDqpdqPcs01q2gEIlZ1YY",
+          "mode": "list",
+          "cachedResultName": "Web SCrap",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17Pj-l6WKdoZ5sxVXaPDpWhPDqpdqPcs01q2gEIlZ1YY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17Pj-l6WKdoZ5sxVXaPDpWhPDqpdqPcs01q2gEIlZ1YY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email Status": "Processed",
+            "URL": "={{ $('Loop Over Items').item.json.URL }}"
+          },
+          "matchingColumns": [
+            "URL"
+          ],
+          "schema": [
+            {
+              "id": "URL",
+              "displayName": "URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Raw Content",
+              "displayName": "Raw Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email Status",
+              "displayName": "Email Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        752,
+        192
+      ],
+      "id": "48af1f17-b92a-4548-8337-662fd2d0094c",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "65WzZkEMUnBLXPKl",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "staticData": {
+    "node:Google Sheets Trigger": {
+      "documentId": "17Pj-l6WKdoZ5sxVXaPDpWhPDqpdqPcs01q2gEIlZ1YY",
+      "sheetId": 0,
+      "lastIndexChecked": 20
+    }
+  },
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
