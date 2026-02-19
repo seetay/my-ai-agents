@@ -15,6 +15,14 @@ This repository contains my production-ready AI agents built with n8n, Llama 3, 
 - Filters out "Shorts" and clickbait using Regex logic.
 - Adds high-quality educational videos to a private playlist automatically.
 
+### 🎯 3. Autonomous SDR Agent (SDR Agent.json)
+
+**Stack:** n8n + Custom Web Scraping + OpenAI API **Function:**
+
+- Autonomously scrapes target company directories to extract B2B decision-maker data.
+- Uses LLM logic to analyze lead profiles and draft hyper-personalized outreach emails.
+- Automates the entire outbound prospecting pipeline without human intervention.
+
 ## 🚀 How to Use This Workflow
 1. **Download:** Click on `Curator Agent.json` above and download the file (or copy the raw text).
 2. **Import to n8n:**
